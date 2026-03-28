@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 
 interface RoundResultOverlayProps {
   questionNumber: number
@@ -9,7 +10,7 @@ interface RoundResultOverlayProps {
 
 const teamLabel = { red: 'Tim Merah', blue: 'Tim Biru' }
 const teamColor = { red: 'text-red-500', blue: 'text-blue-500' }
-const winEmoji = { red: '🎉', blue: '🎊' }
+const winImage = { red: '/gift/red-duel.webp', blue: '/gift/blue-duel.webp' }
 
 export default function RoundResultOverlay({ questionNumber, winnerTeam }: RoundResultOverlayProps) {
   return (
@@ -37,14 +38,19 @@ export default function RoundResultOverlay({ questionNumber, winnerTeam }: Round
         dimenangkan oleh {teamLabel[winnerTeam]}!
       </motion.p>
 
-      {/* Karakter pemenang bergerak ke tengah */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.35, type: 'spring', stiffness: 260, damping: 18 }}
-        className="text-8xl"
       >
-        {winEmoji[winnerTeam]}
+        <Image
+          src={winImage[winnerTeam]}
+          alt={`${winnerTeam} wins`}
+          width={140}
+          height={140}
+          className="object-contain"
+          unoptimized
+        />
       </motion.div>
 
       <motion.p

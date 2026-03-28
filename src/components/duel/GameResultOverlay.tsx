@@ -1,18 +1,33 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import Button from '@/components/ui/Button'
 
 interface GameResultOverlayProps {
-  winnerTeam: 'red' | 'blue'
+  winnerTeam: 'red' | 'blue' | 'draw'
   scoreRed: number
   scoreBlue: number
   onFinish: () => void
 }
 
-const teamLabel = { red: 'Tim Merah', blue: 'Tim Biru' }
-const teamColor = { red: 'text-red-500', blue: 'text-blue-500' }
-const winEmoji = { red: '🏆', blue: '🏆' }
+const teamLabel: Record<string, string> = {
+  red: 'Tim Merah',
+  blue: 'Tim Biru',
+  draw: 'Seri'
+}
+
+const teamColor: Record<string, string> = {
+  red: 'text-red-500',
+  blue: 'text-blue-500',
+  draw: 'text-gray-500'
+}
+
+const winImage: Record<string, string> = {
+  red: '/gift/red-duel.webp',
+  blue: '/gift/blue-duel.webp',
+  draw: '/gift/win-duel.webp'
+}
 
 export default function GameResultOverlay({
   winnerTeam,
@@ -41,16 +56,22 @@ export default function GameResultOverlay({
         transition={{ delay: 0.25, type: 'spring', stiffness: 200 }}
         className={`text-5xl font-black ${teamColor[winnerTeam]}`}
       >
-        {teamLabel[winnerTeam]} Menang!
+        {winnerTeam === 'draw' ? 'Seri!' : `${teamLabel[winnerTeam]} Menang!`}
       </motion.p>
 
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.4, type: 'spring', stiffness: 250, damping: 15 }}
-        className="text-9xl"
       >
-        {winEmoji[winnerTeam]}
+        <Image
+          src={winImage[winnerTeam]}
+          alt="winner"
+          width={180}
+          height={180}
+          className="object-contain"
+          unoptimized
+        />
       </motion.div>
 
       <motion.div

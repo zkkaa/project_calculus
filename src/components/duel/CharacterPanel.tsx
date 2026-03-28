@@ -1,22 +1,21 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 
 interface CharacterPanelProps {
   team: 'red' | 'blue'
   isWinner?: boolean
 }
 
-const emoji = {
-  red: { idle: '🧑‍🎓', win: '🎉' },
-  blue: { idle: '👩‍🎓', win: '🎊' },
-}
-
 export default function CharacterPanel({ team, isWinner = false }: CharacterPanelProps) {
   const isRed = team === 'red'
 
+  const idleImage = isRed ? '/gift/red-duel.webp' : '/gift/blue-duel.webp'
+  const winImage = isRed ? '/gift/red-duel.webp' : '/gift/blue-duel.webp'
+
   return (
-    <div className={`flex flex-col items-center gap-2 ${isRed ? 'items-start' : 'items-end'}`}>
+    <div className={`flex flex-col items-center gap-2`}>
       <span
         className="text-xs font-semibold uppercase tracking-widest"
         style={{ color: isRed ? '#ef4444' : '#3b82f6' }}
@@ -32,10 +31,15 @@ export default function CharacterPanel({ team, isWinner = false }: CharacterPane
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.5, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="text-7xl select-none"
-            style={{ filter: 'drop-shadow(0 0 12px rgba(99,102,241,0.3))' }}
           >
-            {emoji[team].win}
+            <Image
+              src={winImage}
+              alt={`${team} winner`}
+              width={100}
+              height={100}
+              className="object-contain"
+              unoptimized
+            />
           </motion.div>
         ) : (
           <motion.div
@@ -43,9 +47,15 @@ export default function CharacterPanel({ team, isWinner = false }: CharacterPane
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="text-8xl select-none"
           >
-            {emoji[team].idle}
+            <Image
+              src={idleImage}
+              alt={`${team} character`}
+              width={200}
+              height={200}
+              className="object-contain"
+              unoptimized
+            />
           </motion.div>
         )}
       </AnimatePresence>
