@@ -101,8 +101,8 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
     if (!room?.countdown_started_at) return
     const elapsed = Date.now() - room.countdown_started_at
     const totalDuration = 5400
-    if (elapsed >= totalDuration) { setShowCountdown(false); return }
-    const timer = setTimeout(() => setShowCountdown(false), totalDuration - elapsed)
+    const delay = elapsed >= totalDuration ? 0 : totalDuration - elapsed
+    const timer = setTimeout(() => setShowCountdown(false), delay)
     return () => clearTimeout(timer)
   }, [room?.countdown_started_at])
 
@@ -197,7 +197,6 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
   }
 
   const currentQuestion = questions[room.current_question]
-  const myName = team === 'red' ? room.name_red : room.name_blue
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-white">
@@ -226,7 +225,7 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
       {!room.game_winner && !showCountdown && (
         <button
           onClick={() => setShowSurrender(true)}
-          className="absolute top-4 left-1/2 -translate-x-1/2 z-10 text-xs text-gray-400 hover:text-red-400 border border-gray-200 hover:border-red-300 px-3 py-1.5 rounded-full transition-all"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 text-xs text-gray-500 hover:text-red-400 border border-gray-300 hover:border-red-300 px-3 py-1.5 rounded-full transition-all"
         >
           🏳️ Menyerah
         </button>

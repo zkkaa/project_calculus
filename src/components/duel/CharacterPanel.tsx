@@ -30,11 +30,11 @@ export default function CharacterPanel({ team, name, isWinner = false }: Charact
             exit={{ scale: 0.5, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           >
-            <Image src={winImage} alt={`${name} winner`} width={100} height={100} className="object-contain" unoptimized />
+            <Image src={winImage} alt={`${name} winner`} width={120} height={120} className="object-contain" unoptimized />
           </motion.div>
         ) : (
           <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <Image src={idleImage} alt={`${name} character`} width={120} height={120} className="object-contain" unoptimized />
+            <Image src={idleImage} alt={`${name} character`} width={200} height={20} className="object-contain" unoptimized />
           </motion.div>
         )}
       </AnimatePresence>
