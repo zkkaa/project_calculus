@@ -7,7 +7,7 @@ interface CountdownOverlayProps {
   onComplete: () => void
 }
 
-export default function CountdownOverlay({ onComplete }: CountdownOverlayProps) {
+export default function CountdownOverlay({ }: CountdownOverlayProps) {
   const steps = ['Game dimulai!', '3', '2', '1', 'MULAI!']
   const [step, setStep] = useState(0)
 
@@ -16,7 +16,7 @@ export default function CountdownOverlay({ onComplete }: CountdownOverlayProps) 
     const delay = step === 0 ? 1800 : 900
     const timer = setTimeout(() => setStep(s => s + 1), delay)
     return () => clearTimeout(timer)
-  }, [step])
+  }, [step, steps.length])
 
   return (
     <div className="absolute inset-0 flex items-center justify-center z-30 bg-white/80 backdrop-blur-sm">
