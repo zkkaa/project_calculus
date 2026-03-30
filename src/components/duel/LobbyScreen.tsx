@@ -28,6 +28,7 @@ const calcDecorations = [
 
 export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
   const [mode, setMode] = useState<'choose' | 'create' | 'joining' | 'joined'>('choose')
+  const [playerName, setPlayerName] = useState('')
   const [roomId, setRoomId] = useState('')
   const [joinCode, setJoinCode] = useState('')
   const [copied, setCopied] = useState(false)
@@ -36,7 +37,6 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
   const [friendJoined, setFriendJoined] = useState(false)
   const [starting, setStarting] = useState(false)
 
-  // Listen realtime: tunggu teman join (untuk player 1)
   useEffect(() => {
     if (mode !== 'create' || !roomId) return
 
@@ -48,7 +48,7 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
         table: 'rooms',
         filter: `id=eq.${roomId}`
       }, (payload) => {
-        if (payload.new.player_blue) setFriendJoined(true)
+        if (payload.new.name_blue && payload.new.name_blue !== 'Tim Biru') setFriendJoined(true)
         if (payload.new.started === true) onRoomReady(roomId, 'red')
       })
       .subscribe()
@@ -57,6 +57,10 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
   }, [mode, roomId])
 
   async function handleCreateRoom() {
+    if (playerName.trim().length === 0) {
+      setError('Masukkan nama kamu dulu ya!')
+      return
+    }
     setLoading(true)
     setError('')
     const newId = generateRoomId()
@@ -66,6 +70,7 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
       status: 'waiting',
       player_red: 'ready',
       started: false,
+      name_red: playerName.trim(),
     })
 
     if (err) {
@@ -89,6 +94,10 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
   }
 
   async function handleJoinRoom() {
+    if (playerName.trim().length === 0) {
+      setError('Masukkan nama kamu dulu ya!')
+      return
+    }
     if (joinCode.trim().length === 0) return
     setLoading(true)
     setError('')
@@ -120,7 +129,7 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
 
     const { error: updateErr } = await supabase
       .from('rooms')
-      .update({ player_blue: 'ready' })
+      .update({ player_blue: 'ready', name_blue: playerName.trim() })
       .eq('id', code)
 
     if (updateErr) {
@@ -129,7 +138,6 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
       return
     }
 
-    // Listen realtime: tunggu host mulai (untuk player 2)
     supabase
       .channel(`lobby-join-${code}`)
       .on('postgres_changes', {
@@ -161,12 +169,11 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
     setFriendJoined(false)
     setStarting(false)
     setCopied(false)
+    setPlayerName('')
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white relative overflow-hidden">
-
-      {/* Dekorasi background */}
       <div className="absolute inset-0 pointer-events-none select-none">
         {calcDecorations.map((el, i) => (
           <span key={`deco-${i}`} style={{
@@ -181,7 +188,7 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
 
       <AnimatePresence mode="wait">
 
-        {/* Mode: pilih buat atau join */}
+        {/* Pilih mode */}
         {mode === 'choose' && (
           <motion.div key="choose"
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
@@ -192,24 +199,51 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
               <h1 className="text-3xl font-bold text-gray-900 mb-1">Kalkulus Duel</h1>
               <p className="text-gray-500 text-sm">Tantang temanmu dalam duel soal kalkulus!</p>
             </div>
-            <div className="w-full flex flex-col gap-3">
-              <Button onClick={handleCreateRoom} disabled={loading} className="w-full py-4 text-base">
-                {loading ? 'Membuat room...' : 'Buat Room'}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => { setMode('joining'); setError('') }}
-                disabled={loading}
-                className="w-full py-4 text-base"
-              >
-                Masuk Room
-              </Button>
+
+            <div className="w-full flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1 block">
+                  Nama kamu
+                </label>
+                <Input
+                  value={playerName}
+                  onChange={(val) => { setPlayerName(val); setError('') }}
+                  placeholder="Masukkan namamu..."
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex flex-col gap-3 pt-1">
+                <Button
+                  onClick={handleCreateRoom}
+                  disabled={loading || playerName.trim().length === 0}
+                  className="w-full py-4 text-base"
+                >
+                  {loading ? 'Membuat room...' : 'Buat Room'}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    if (playerName.trim().length === 0) {
+                      setError('Masukkan nama kamu dulu ya!')
+                      return
+                    }
+                    setMode('joining')
+                    setError('')
+                  }}
+                  disabled={loading}
+                  className="w-full py-4 text-base"
+                >
+                  Masuk Room
+                </Button>
+              </div>
             </div>
+
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           </motion.div>
         )}
 
-        {/* Mode: setelah buat room, tampilkan kode */}
+        {/* Setelah buat room */}
         {mode === 'create' && (
           <motion.div key="create"
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
@@ -241,26 +275,19 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
                   <span className="inline-block w-2 h-2 rounded-full bg-green-400" />
                   Teman sudah masuk! Siap memulai.
                 </div>
-                <Button
-                  onClick={handleStartGame}
-                  disabled={starting}
-                  className="w-full py-4 text-base"
-                >
+                <Button onClick={handleStartGame} disabled={starting} className="w-full py-4 text-base">
                   {starting ? 'Memulai...' : 'Mulai Game'}
                 </Button>
               </motion.div>
             )}
 
-            <button
-              onClick={resetToChoose}
-              className="text-xs text-gray-400 hover:text-gray-600 underline"
-            >
+            <button onClick={resetToChoose} className="text-xs text-gray-400 hover:text-gray-600 underline">
               Batal & kembali
             </button>
           </motion.div>
         )}
 
-        {/* Mode: form input kode room */}
+        {/* Form input kode */}
         {mode === 'joining' && (
           <motion.div key="joining"
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
@@ -290,18 +317,14 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
               >
                 {loading ? 'Bergabung...' : 'Bergabung'}
               </Button>
-              <Button
-                variant="secondary"
-                onClick={resetToChoose}
-                className="w-full"
-              >
+              <Button variant="secondary" onClick={resetToChoose} className="w-full">
                 Kembali
               </Button>
             </div>
           </motion.div>
         )}
 
-        {/* Mode: sudah join, tunggu host mulai */}
+        {/* Sudah join, tunggu host */}
         {mode === 'joined' && (
           <motion.div key="joined"
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
@@ -311,7 +334,7 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
             <div className="text-center">
               <p className="text-gray-500 text-sm mb-1">Berhasil masuk room</p>
               <div className="text-5xl font-black tracking-widest text-indigo-600 my-2">{joinCode}</div>
-              <p className="text-gray-400 text-xs">Kamu bergabung sebagai Tim Biru</p>
+              <p className="text-gray-400 text-xs">Kamu bergabung sebagai lawan</p>
             </div>
             <div className="flex items-center gap-2 text-gray-400 text-sm">
               <span className="inline-block w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
