@@ -10,6 +10,7 @@ import QuestionBox from './QuestionBox'
 import CountdownOverlay from './CountdownOverlay'
 import RoundResultOverlay from './RoundResultOverlay'
 import GameResultOverlay from './GameResultOverlay'
+import SurrenderConfirm from './SurrenderConfirm'
 
 interface GameScreenProps {
   roomId: string
@@ -28,6 +29,9 @@ interface RoomState {
   game_winner: string | null
   question_ids: string | null
   countdown_started_at: number | null
+  name_red: string
+  name_blue: string
+  surrendered_by: string | null
 }
 
 interface Question {
@@ -43,21 +47,18 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
   const [showCountdown, setShowCountdown] = useState(true)
   const [answered, setAnswered] = useState(false)
   const [wrongAnswer, setWrongAnswer] = useState(false)
+  const [showSurrender, setShowSurrender] = useState(false)
 
-  // Taruh di atas useEffect supaya bisa dipanggil sebelum dideklarasikan
   const loadQuestionsByIds = useCallback(async (ids: number[]) => {
     const { data } = await supabase
       .from('questions')
       .select('*')
       .in('id', ids)
-
     if (!data) return
-
     const ordered = ids.map((id) => data.find((q) => q.id === id)!)
     setQuestions(ordered)
   }, [])
 
-  // Load room pertama kali
   useEffect(() => {
     async function initRoom() {
       const { data: roomData } = await supabase
@@ -69,7 +70,6 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
       if (!roomData) return
 
       if (!roomData.question_ids) {
-        // Player 1: generate soal + simpan timestamp countdown
         const { data: allQ } = await supabase.from('questions').select('id')
         if (!allQ) return
 
@@ -88,7 +88,6 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
         await loadQuestionsByIds(shuffledIds)
         setRoom({ ...roomData, question_ids: JSON.stringify(shuffledIds), countdown_started_at: now })
       } else {
-        // Player 2: pakai soal yang sudah ada
         const ids = JSON.parse(roomData.question_ids)
         await loadQuestionsByIds(ids)
         setRoom(roomData)
@@ -98,25 +97,15 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
     initRoom()
   }, [roomId, loadQuestionsByIds])
 
-  // Sinkronisasi countdown berdasarkan countdown_started_at dari Supabase
   useEffect(() => {
     if (!room?.countdown_started_at) return
-
     const elapsed = Date.now() - room.countdown_started_at
-    // Total durasi countdown: "Game dimulai!" 1800ms + "3" 900ms + "2" 900ms + "1" 900ms + "MULAI!" 900ms = 5400ms
     const totalDuration = 5400
-
-    const remaining = totalDuration - elapsed
-    if (remaining <= 0) {
-      const timer = setTimeout(() => setShowCountdown(false), 0)
-      return () => clearTimeout(timer)
-    }
-
-    const timer = setTimeout(() => setShowCountdown(false), remaining)
+    if (elapsed >= totalDuration) { setShowCountdown(false); return }
+    const timer = setTimeout(() => setShowCountdown(false), totalDuration - elapsed)
     return () => clearTimeout(timer)
   }, [room?.countdown_started_at])
 
-  // Listen realtime
   useEffect(() => {
     const channel = supabase
       .channel(`game-${roomId}`)
@@ -127,14 +116,11 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
         filter: `id=eq.${roomId}`
       }, async (payload) => {
         const newRoom = payload.new as RoomState
-
         if (newRoom.question_ids && questions.length === 0) {
           const ids = JSON.parse(newRoom.question_ids)
           await loadQuestionsByIds(ids)
         }
-
         setRoom(newRoom)
-
         if (!newRoom.show_round_result) {
           setAnswered(false)
           setWrongAnswer(false)
@@ -147,7 +133,6 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
 
   async function handleAnswer(answer: string) {
     if (answered || !room || !questions.length) return
-
     const currentQ = questions[room.current_question]
     const isCorrect = answer.toLowerCase().trim() === currentQ.answer.toLowerCase().trim()
 
@@ -158,7 +143,6 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
     }
 
     setAnswered(true)
-
     const newScoreRed = team === 'red' ? room.score_red + 1 : room.score_red
     const newScoreBlue = team === 'blue' ? room.score_blue + 1 : room.score_blue
     const nextQuestion = room.current_question + 1
@@ -186,6 +170,19 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
     }
   }
 
+  async function handleSurrender() {
+    if (!room) return
+    // Lawan yang menang
+    const winner = team === 'red' ? 'blue' : 'red'
+    await supabase.from('rooms').update({
+      game_winner: winner,
+      surrendered_by: team,
+      status: 'finished',
+      show_round_result: false,
+    }).eq('id', roomId)
+    setShowSurrender(false)
+  }
+
   async function handleFinish() {
     await supabase.from('rooms').delete().eq('id', roomId)
     router.push('/games/duel')
@@ -200,6 +197,7 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
   }
 
   const currentQuestion = questions[room.current_question]
+  const myName = team === 'red' ? room.name_red : room.name_blue
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-white">
@@ -224,11 +222,23 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
         ))}
       </div>
 
+      {/* Tombol menyerah */}
+      {!room.game_winner && !showCountdown && (
+        <button
+          onClick={() => setShowSurrender(true)}
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-10 text-xs text-gray-400 hover:text-red-400 border border-gray-200 hover:border-red-300 px-3 py-1.5 rounded-full transition-all"
+        >
+          🏳️ Menyerah
+        </button>
+      )}
+
       <ScoreBoard
         scoreRed={room.score_red}
         scoreBlue={room.score_blue}
         totalQuestions={TOTAL_QUESTIONS}
         currentQuestion={room.current_question + 1}
+        nameRed={room.name_red}
+        nameBlue={room.name_blue}
       />
 
       {/* Feedback jawaban salah */}
@@ -248,6 +258,7 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
       <div className="flex-1 flex items-center justify-between px-6 md:px-16 pt-24 pb-8 gap-4">
         <CharacterPanel
           team="red"
+          name={room.name_red}
           isWinner={room.show_round_result && room.round_winner === 'red'}
         />
 
@@ -268,14 +279,13 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
 
         <CharacterPanel
           team="blue"
+          name={room.name_blue}
           isWinner={room.show_round_result && room.round_winner === 'blue'}
         />
       </div>
 
       <AnimatePresence>
-        {showCountdown && (
-          <CountdownOverlay onComplete={() => setShowCountdown(false)} />
-        )}
+        {showCountdown && <CountdownOverlay onComplete={() => setShowCountdown(false)} />}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -283,6 +293,7 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
           <RoundResultOverlay
             questionNumber={room.current_question + 1}
             winnerTeam={room.round_winner as 'red' | 'blue'}
+            winnerName={room.round_winner === 'red' ? room.name_red : room.name_blue}
           />
         )}
       </AnimatePresence>
@@ -290,10 +301,26 @@ export default function GameScreen({ roomId, team }: GameScreenProps) {
       <AnimatePresence>
         {room.game_winner && (
           <GameResultOverlay
-            winnerTeam={room.game_winner as 'red' | 'blue'}
+            winnerTeam={room.game_winner as 'red' | 'blue' | 'draw'}
+            winnerName={
+              room.game_winner === 'red' ? room.name_red :
+              room.game_winner === 'blue' ? room.name_blue : 'Seri'
+            }
             scoreRed={room.score_red}
             scoreBlue={room.score_blue}
+            nameRed={room.name_red}
+            nameBlue={room.name_blue}
+            surrendered={!!room.surrendered_by}
             onFinish={handleFinish}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showSurrender && (
+          <SurrenderConfirm
+            onConfirm={handleSurrender}
+            onCancel={() => setShowSurrender(false)}
           />
         )}
       </AnimatePresence>

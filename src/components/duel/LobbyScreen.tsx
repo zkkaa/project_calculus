@@ -54,7 +54,7 @@ export default function LobbyScreen({ onRoomReady }: LobbyScreenProps) {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [mode, roomId])
+  }, [mode, onRoomReady, roomId])
 
   async function handleCreateRoom() {
     if (playerName.trim().length === 0) {
