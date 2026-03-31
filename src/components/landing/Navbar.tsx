@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+// import { usePathname } from 'next/navigation'
 import { gsap } from 'gsap'
-import { NAV_LINKS, HAMBURGER_MENU, SITE_NAME } from '@/data/landing'
+import { NAV_LINKS, HAMBURGER_MENU } from '@/data/landing'
 
 // ─────────────────────────────────────────────
 //  Navbar — Landing Page
