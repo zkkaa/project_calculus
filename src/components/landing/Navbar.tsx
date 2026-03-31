@@ -148,7 +148,7 @@ export default function Navbar() {
       <nav
         className={`
           fixed top-4 left-1/2 -translate-x-1/2 z-50
-          w-[92%] max-w-3xl
+          w-[92%] max-w-7xl
           flex items-center justify-between
           px-5 py-3
           bg-white/80 backdrop-blur-xl
@@ -178,7 +178,7 @@ export default function Navbar() {
                   onClick={() => handleNavClick(link.href)}
                   className={`
                     relative px-4 py-1.5 text-sm font-medium rounded-lg
-                    transition-colors duration-200
+                    transition-colors duration-400
                     ${isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-900'}
                   `}
                 >
