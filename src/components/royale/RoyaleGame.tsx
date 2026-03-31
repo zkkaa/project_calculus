@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import WaitingRoom from './WaitingRoom'
@@ -38,6 +38,7 @@ interface RoomState {
   question_ids: string | null
   show_result: boolean
   round_winner_ids: string | null
+  countdown_started_at: number | null
 }
 
 const TOTAL_QUESTIONS = 10
@@ -50,6 +51,9 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
   const [questions, setQuestions] = useState<Question[]>([])
   const [players, setPlayers] = useState<Player[]>([])
   const [selectedAnswer, setSelectedAnswer] = useState<string | undefined>()
+
+  // Ref untuk mencegah double-trigger show_result oleh timer
+  const showResultTriggered = useRef(false)
 
   const loadQuestions = useCallback(async (ids: number[]) => {
     const { data } = await supabase
@@ -69,7 +73,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
     if (data) setPlayers(data)
   }, [roomId])
 
-  // Subscribe realtime room + players
+  // ── Subscribe realtime room + players ──
   useEffect(() => {
     // Load awal
     supabase.from('royale_rooms').select('*').eq('id', roomId).single()
@@ -100,8 +104,11 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
           setPhase('playing')
         }
         if (newRoom.status === 'finished') setPhase('finished')
+
+        // Reset state jawaban ketika soal baru dimulai
         if (!newRoom.show_result) {
           setSelectedAnswer(undefined)
+          showResultTriggered.current = false
         }
       })
       .subscribe()
@@ -125,51 +132,75 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
     }
   }, [roomId, loadQuestions, loadPlayers, questions.length])
 
+  // ── FIX #1: Admin memaksa show_result ketika timer habis ──
+  // Hanya admin yang set show_result, semua client sudah auto-timeout
+  // via QuestionPanel (onAnswer('__timeout__')), tapi show_result tetap
+  // dikontrol admin supaya sinkron
+  useEffect(() => {
+    if (!isAdmin || !room || room.show_result || phase !== 'playing') return
+    if (!room.countdown_started_at) return
+
+    const elapsed = (Date.now() - room.countdown_started_at) / 1000
+    const remaining = Math.max(0, TIME_LIMIT - elapsed)
+
+    if (remaining <= 0) {
+      // Timer sudah habis — langsung trigger
+      if (!showResultTriggered.current) {
+        showResultTriggered.current = true
+        handleShowResult()
+      }
+      return
+    }
+
+    // Set timeout untuk sisa waktu + 0.5s buffer untuk toleransi network
+    const timeout = setTimeout(() => {
+      if (!showResultTriggered.current) {
+        showResultTriggered.current = true
+        handleShowResult()
+      }
+    }, remaining * 1000 + 500)
+
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room?.countdown_started_at, room?.show_result, phase, isAdmin])
+
+  // ── Auto show result ketika semua player aktif sudah jawab ──
+  useEffect(() => {
+    if (!room || room.show_result || !isAdmin || phase !== 'playing') return
+    const activePlayers = players.filter(p => !p.is_eliminated)
+    if (activePlayers.length === 0) return
+    const allAnswered = activePlayers.every(p => p.current_answer !== null)
+    if (allAnswered && !showResultTriggered.current) {
+      showResultTriggered.current = true
+      handleShowResult()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [players, room?.show_result])
+
+  // ── Handle jawaban dari player ──
   async function handleAnswer(answer: string) {
-    if (!room || selectedAnswer) return
-    if (answer === '__timeout__' && selectedAnswer) return
+    if (!room || selectedAnswer !== undefined) return
+    const isTimeout = answer === '__timeout__'
 
     const currentQ = questions[room.current_question]
     if (!currentQ) return
 
-    const isCorrect = answer !== '__timeout__' &&
+    const isCorrect = !isTimeout &&
       answer.toLowerCase().trim() === currentQ.answer.toLowerCase().trim()
 
-    setSelectedAnswer(answer === '__timeout__' ? '' : answer)
+    // Set selectedAnswer: string kosong untuk timeout, jawaban sebenarnya untuk jawaban normal
+    setSelectedAnswer(isTimeout ? '' : answer)
+
+    const myPlayer = players.find(p => p.id === playerId)
 
     await supabase.from('royale_players').update({
-      current_answer: answer,
+      current_answer: isTimeout ? '__timeout__' : answer,
       answered_at: Date.now(),
       is_correct: isCorrect,
-      score: isCorrect
-        ? players.find(p => p.id === playerId)!.score + 10
-        : players.find(p => p.id === playerId)!.score,
+      score: isCorrect ? (myPlayer?.score ?? 0) + 10 : (myPlayer?.score ?? 0),
+      // FIX #1: Timeout JUGA tereleminasi, sama seperti jawaban salah
+      is_eliminated: !isCorrect,
     }).eq('id', playerId)
-
-    // Kalau salah dan bukan timeout, tandai eliminated
-    if (!isCorrect) {
-      await supabase.from('royale_players').update({
-        is_eliminated: true,
-      }).eq('id', playerId)
-    }
-  }
-
-  async function handleNextQuestion() {
-    if (!room || !isAdmin) return
-    const nextQ = room.current_question + 1
-    const isLast = nextQ >= TOTAL_QUESTIONS
-
-    // Reset jawaban semua player
-    await supabase.from('royale_players')
-      .update({ current_answer: null, answered_at: null, is_correct: false })
-      .eq('room_id', roomId)
-
-    await supabase.from('royale_rooms').update({
-      current_question: nextQ,
-      show_result: false,
-      round_winner_ids: null,
-      status: isLast ? 'finished' : 'playing',
-    }).eq('id', roomId)
   }
 
   async function handleShowResult() {
@@ -179,20 +210,34 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
     }).eq('id', roomId)
   }
 
+  async function handleNextQuestion() {
+    if (!room || !isAdmin) return
+    const nextQ = room.current_question + 1
+
+    // FIX #2: Cek apakah semua player aktif sudah tereleminasi
+    const activePlayers = players.filter(p => !p.is_eliminated)
+    const allEliminated = activePlayers.length === 0
+    const isLast = nextQ >= TOTAL_QUESTIONS || allEliminated
+
+    // Reset jawaban semua player untuk soal berikutnya
+    await supabase.from('royale_players')
+      .update({ current_answer: null, answered_at: null, is_correct: false })
+      .eq('room_id', roomId)
+
+    await supabase.from('royale_rooms').update({
+      current_question: isLast ? room.current_question : nextQ,
+      show_result: false,
+      round_winner_ids: null,
+      status: isLast ? 'finished' : 'playing',
+      // FIX #1: Set countdown_started_at baru untuk sinkronisasi timer soal berikutnya
+      countdown_started_at: isLast ? null : Date.now(),
+    }).eq('id', roomId)
+  }
+
   async function handleFinish() {
     await supabase.from('royale_rooms').delete().eq('id', roomId)
     router.push('/games/royale')
   }
-
-  // Auto show result setelah semua player aktif menjawab
-  useEffect(() => {
-    if (!room || room.show_result || !isAdmin || phase !== 'playing') return
-    const activePlayers = players.filter(p => !p.is_eliminated)
-    if (activePlayers.length === 0) return
-    const allAnswered = activePlayers.every(p => p.current_answer !== null)
-    if (allAnswered) handleShowResult()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [players, room?.show_result])
 
   // ── RENDER ──
   if (phase === 'waiting') {
@@ -229,6 +274,9 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
   const activePlayers = players.filter(p => !p.is_eliminated)
   const myPlayer = players.find(p => p.id === playerId)
   const isEliminated = myPlayer?.is_eliminated ?? false
+
+  // FIX #2: Hitung apakah semua player tereleminasi di babak ini
+  const allEliminated = room.show_result && activePlayers.length === 0
 
   return (
     <div className="min-h-screen bg-linear-to-br from-indigo-900 via-purple-900 to-indigo-800 flex flex-col relative overflow-hidden">
@@ -267,7 +315,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
             <div className="text-6xl">💀</div>
             <p className="text-xl font-bold">Kamu tereliminasi!</p>
             <p className="text-sm">Tonton pertandingan yang tersisa...</p>
-            {/* Tampilkan soal tapi disable */}
+            {/* Tampilkan soal tapi non-interaktif */}
             <div className="mt-4 w-full max-w-2xl opacity-50 pointer-events-none">
               {currentQ && (
                 <QuestionPanel
@@ -276,6 +324,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
                   questionText={currentQ.question}
                   options={parsedOptions}
                   timeLimit={TIME_LIMIT}
+                  startedAt={room.countdown_started_at ?? Date.now()}
                   onAnswer={() => {}}
                   disabled={true}
                   showResult={room.show_result}
@@ -292,8 +341,9 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
               questionText={currentQ.question}
               options={parsedOptions}
               timeLimit={TIME_LIMIT}
+              startedAt={room.countdown_started_at ?? Date.now()}
               onAnswer={handleAnswer}
-              disabled={!!selectedAnswer}
+              disabled={selectedAnswer !== undefined}
               selectedAnswer={selectedAnswer}
               showResult={room.show_result}
               correctAnswer={room.show_result ? currentQ.answer : undefined}
@@ -314,6 +364,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
           isLastQuestion={room.current_question + 1 >= TOTAL_QUESTIONS}
           onContinue={handleNextQuestion}
           isAdmin={isAdmin}
+          allEliminated={allEliminated}
         />
       )}
     </div>
