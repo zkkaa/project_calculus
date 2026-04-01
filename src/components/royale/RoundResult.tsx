@@ -62,7 +62,7 @@ export default function RoundResult({
           <div className="flex flex-col items-center gap-3">
             <div className="text-6xl">💥</div>
             <h2 className="text-3xl font-black text-white">Semua Pemain Gugur!</h2>
-            <p className="text-red-300 text-sm">Tidak ada pemenang di babak ini. Game berakhir.</p>
+            <p className="text-red-300 text-sm">Game berakhir.</p>
           </div>
         ) : isCorrect ? (
           // Jawaban benar

@@ -54,13 +54,13 @@ function AdminObserver({
   questions,
   players,
   onNextQuestion,
-  onFinish,
+  onGoToFinal,
 }: {
   room: RoomState
   questions: Question[]
   players: Player[]
   onNextQuestion: () => void
-  onFinish: () => void
+  onGoToFinal: () => void
 }) {
   const currentQ = questions[room.current_question]
   const activePlayers = players.filter(p => !p.is_eliminated)
@@ -70,7 +70,7 @@ function AdminObserver({
   const isLastQuestion = room.current_question + 1 >= TOTAL_QUESTIONS
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-800 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-indigo-900 via-purple-900 to-indigo-800 flex flex-col relative overflow-hidden">
 
       {/* Dekorasi background */}
       <div className="absolute inset-0 pointer-events-none select-none">
@@ -156,17 +156,16 @@ function AdminObserver({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className={`backdrop-blur border rounded-2xl p-5 flex flex-col items-center gap-3 text-center ${
-                allEliminated
-                  ? 'bg-red-500/10 border-red-400/30'
-                  : 'bg-white/10 border-white/20'
-              }`}
+              className={`backdrop-blur border rounded-2xl p-5 flex flex-col items-center gap-3 text-center ${allEliminated
+                ? 'bg-red-500/10 border-red-400/30'
+                : 'bg-white/10 border-white/20'
+                }`}
             >
               {allEliminated ? (
                 <>
                   <div className="text-5xl">💥</div>
                   <h3 className="text-2xl font-black text-white">Semua Pemain Gugur!</h3>
-                  <p className="text-red-300 text-sm">Game akan berakhir.</p>
+                  <p className="text-red-300 text-sm">Game berakhir.</p>
                 </>
               ) : (
                 <>
@@ -194,11 +193,10 @@ function AdminObserver({
                 <motion.div
                   key={p.id}
                   layout
-                  className={`flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border ${
-                    room.show_result && p.is_correct
-                      ? 'border-green-400/40 bg-green-500/10'
-                      : 'border-white/10'
-                  }`}
+                  className={`flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border ${room.show_result && p.is_correct
+                    ? 'border-green-400/40 bg-green-500/10'
+                    : 'border-white/10'
+                    }`}
                 >
                   <Image
                     src={`/gift/${p.avatar}`}
@@ -209,10 +207,10 @@ function AdminObserver({
                   <span className="text-white text-xs font-semibold truncate flex-1">{p.name}</span>
                   {/* Indikator sudah jawab */}
                   {!room.show_result && p.current_answer !== null && (
-                    <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" title="Sudah menjawab" />
+                    <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" title="Sudah menjawab" />
                   )}
                   {room.show_result && (
-                    <span className="flex-shrink-0 text-sm">
+                    <span className="shrink-0 text-sm">
                       {p.is_correct ? '✅' : '❌'}
                     </span>
                   )}
@@ -233,9 +231,8 @@ function AdminObserver({
               .map((p, i) => (
                 <div
                   key={p.id}
-                  className={`flex items-center gap-3 p-2 rounded-xl transition-all ${
-                    p.is_eliminated ? 'opacity-40' : ''
-                  }`}
+                  className={`flex items-center gap-3 p-2 rounded-xl transition-all ${p.is_eliminated ? 'opacity-40' : ''
+                    }`}
                 >
                   <span className="text-white/40 text-sm w-6 text-center font-bold">
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
@@ -261,7 +258,7 @@ function AdminObserver({
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            onClick={allEliminated || isLastQuestion ? onFinish : onNextQuestion}
+            onClick={allEliminated || isLastQuestion ? onGoToFinal : onNextQuestion}  // ← pakai onGoToFinal
             className="w-full py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg transition-all hover:scale-[1.02] active:scale-95 shadow-lg"
           >
             {allEliminated || isLastQuestion
@@ -452,6 +449,14 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
     router.push('/games/royale')
   }
 
+  async function handleGoToFinal() {
+  await supabase.from('royale_rooms').update({
+    status: 'finished',
+  }).eq('id', roomId)
+  // phase akan otomatis berubah ke 'finished' via realtime listener
+  // lalu render FinalResult
+}
+
   // ── RENDER ──
   if (phase === 'waiting') {
     return (
@@ -476,7 +481,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
 
   if (!room || questions.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-indigo-900 to-purple-900 flex items-center justify-center">
         <p className="text-white animate-pulse text-lg">Memuat soal...</p>
       </div>
     )
@@ -490,7 +495,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
         questions={questions}
         players={players}
         onNextQuestion={handleNextQuestion}
-        onFinish={handleFinish}
+        onGoToFinal={handleGoToFinal}
       />
     )
   }
@@ -504,7 +509,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
   const allEliminated = room.show_result && activePlayers.length === 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-800 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-indigo-900 via-purple-900 to-indigo-800 flex flex-col relative overflow-hidden">
 
       {/* Dekorasi background */}
       <div className="absolute inset-0 pointer-events-none select-none">
@@ -547,7 +552,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
                   options={parsedOptions}
                   timeLimit={TIME_LIMIT}
                   startedAt={room.countdown_started_at ?? Date.now()}
-                  onAnswer={() => {}}
+                  onAnswer={() => { }}
                   disabled={true}
                   showResult={room.show_result}
                   correctAnswer={room.show_result ? currentQ.answer : undefined}

@@ -133,7 +133,7 @@ export default function FinalResult({ players, myPlayerId, onFinish }: FinalResu
         onClick={onFinish}
         className="px-10 py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg transition-all hover:scale-105 active:scale-95"
       >
-        🏠 Kembali ke Menu
+        Keluar Game
       </motion.button>
     </div>
   )
