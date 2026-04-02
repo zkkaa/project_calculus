@@ -474,18 +474,26 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.countdown_started_at, room?.show_result, phase, isAdmin])
 
-  // ── Auto show result saat semua player aktif sudah jawab ──
+  // ── Auto show result saat semua player aktif sudah jawab atau semua pemain tereliminasi ──
   useEffect(() => {
     if (!room || room.show_result || !isAdmin || phase !== 'playing') return
     const activePlayers = players.filter(p => !p.is_eliminated)
-    if (activePlayers.length === 0) return
+
+    if (activePlayers.length === 0) {
+      if (!showResultTriggered.current) {
+        showResultTriggered.current = true
+        handleShowResult()
+      }
+      return
+    }
+
     const allAnswered = activePlayers.every(p => p.current_answer !== null)
     if (allAnswered && !showResultTriggered.current) {
       showResultTriggered.current = true
       handleShowResult()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [players, room?.show_result])
+  }, [players, room?.show_result, phase, isAdmin])
 
   async function handleAnswer(answer: string) {
     if (!room || selectedAnswer !== undefined) return

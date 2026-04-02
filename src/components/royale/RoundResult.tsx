@@ -46,7 +46,8 @@ export default function RoundResult({
   const [countdown, setCountdown] = useState(5)
 
   useEffect(() => {
-    if (!isAdmin || allEliminated) return
+    if (!isAdmin) return
+    if (allEliminated) return
     setCountdown(5)
 
     const interval = setInterval(() => {
@@ -215,7 +216,7 @@ export default function RoundResult({
         </motion.div>
       )}
 
-      {!isAdmin && (
+      {!isAdmin && !allEliminated && (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
