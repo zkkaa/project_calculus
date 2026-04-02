@@ -66,6 +66,26 @@ export default function RoundResult({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, questionNumber, allEliminated])
 
+  // ── Countdown display untuk pemain ──
+  const [playerCountdown, setPlayerCountdown] = useState(5)
+
+  useEffect(() => {
+    if (isAdmin || allEliminated) return
+    setPlayerCountdown(5)
+
+    const interval = setInterval(() => {
+      setPlayerCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [isAdmin, questionNumber, allEliminated])
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -224,7 +244,16 @@ export default function RoundResult({
           className="text-indigo-300 text-sm"
         >
           <span className="inline-block w-2 h-2 rounded-full bg-indigo-400 animate-pulse mr-2" />
-          Menunggu soal berikutnya...
+          Soal berikutnya dalam{' '}
+          <motion.span
+            key={playerCountdown}
+            initial={{ scale: 1.4, opacity: 0.6 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="font-bold text-indigo-200"
+          >
+            {playerCountdown}
+          </motion.span>
+          {' '}detik...
         </motion.p>
       )}
     </motion.div>
