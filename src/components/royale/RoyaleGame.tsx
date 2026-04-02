@@ -45,6 +45,7 @@ interface RoomState {
 
 const TOTAL_QUESTIONS = 10
 const TIME_LIMIT = 20
+const AUTO_ADVANCE_SECONDS = 5   // ← hitung mundur sebelum lanjut otomatis
 
 // ─────────────────────────────────────────────
 // Komponen tampilan admin sebagai observer
@@ -68,6 +69,39 @@ function AdminObserver({
   const answeredCount = activePlayers.filter(p => p.current_answer !== null).length
   const allEliminated = room.show_result && activePlayers.length === 0
   const isLastQuestion = room.current_question + 1 >= TOTAL_QUESTIONS
+
+  // ── Auto-countdown untuk admin ──
+  const [countdown, setCountdown] = useState(AUTO_ADVANCE_SECONDS)
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    // Hanya jalankan countdown saat show_result aktif
+    // dan bukan soal terakhir / semua gugur (kasus itu butuh konfirmasi manual)
+    if (!room.show_result || allEliminated || isLastQuestion) {
+      if (countdownRef.current) clearInterval(countdownRef.current)
+      setCountdown(AUTO_ADVANCE_SECONDS)
+      return
+    }
+
+    setCountdown(AUTO_ADVANCE_SECONDS)
+
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current!)
+          onNextQuestion()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current)
+    }
+  // onNextQuestion sengaja tidak dimasukkan agar tidak re-trigger
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room.show_result, room.current_question, allEliminated, isLastQuestion])
 
   return (
     <div className="min-h-screen bg-linear-to-br from-indigo-900 via-purple-900 to-indigo-800 flex flex-col relative overflow-hidden">
@@ -111,7 +145,6 @@ function AdminObserver({
         {/* ── Soal yang sedang dikerjakan / status babak selesai ── */}
         <AnimatePresence mode="wait">
           {!room.show_result ? (
-            // Tampilan saat soal sedang berjalan
             <motion.div
               key="question-view"
               initial={{ opacity: 0, y: -10 }}
@@ -150,7 +183,6 @@ function AdminObserver({
               </div>
             </motion.div>
           ) : (
-            // Tampilan saat babak selesai
             <motion.div
               key="round-done-view"
               initial={{ opacity: 0, y: -10 }}
@@ -205,7 +237,6 @@ function AdminObserver({
                     alt={p.name}
                   />
                   <span className="text-white text-xs font-semibold truncate flex-1">{p.name}</span>
-                  {/* Indikator sudah jawab */}
                   {!room.show_result && p.current_answer !== null && (
                     <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" title="Sudah menjawab" />
                   )}
@@ -253,18 +284,39 @@ function AdminObserver({
           </div>
         </div>
 
-        {/* ── Tombol lanjut (admin) ── */}
+        {/* ── Tombol lanjut (admin) — hanya soal terakhir / semua gugur ── */}
         {room.show_result && (
-          <motion.button
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            onClick={allEliminated || isLastQuestion ? onGoToFinal : onNextQuestion}  // ← pakai onGoToFinal
-            className="w-full py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg transition-all hover:scale-[1.02] active:scale-95 shadow-lg"
+            className="flex flex-col items-center gap-2"
           >
-            {allEliminated || isLastQuestion
-              ? '🏆 Lihat Hasil Akhir'
-              : `➡️ Soal Berikutnya (${room.current_question + 2}/${TOTAL_QUESTIONS})`}
-          </motion.button>
+            {/* Countdown kecil — hanya tampil kalau bukan akhir game */}
+            {!allEliminated && !isLastQuestion && countdown > 0 && (
+              <p className="text-indigo-300/60 text-xs">
+                Lanjut otomatis dalam{' '}
+                <motion.span
+                  key={countdown}
+                  initial={{ scale: 1.4, opacity: 0.6 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="font-bold text-indigo-200"
+                >
+                  {countdown}
+                </motion.span>
+                {' '}detik...
+              </p>
+            )}
+
+            {/* Tombol — selalu tampil, bisa diklik lebih awal */}
+            <button
+              onClick={allEliminated || isLastQuestion ? onGoToFinal : onNextQuestion}
+              className="w-full py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg transition-all hover:scale-[1.02] active:scale-95 shadow-lg"
+            >
+              {allEliminated || isLastQuestion
+                ? '🏆 Lihat Hasil Akhir'
+                : `➡️ Soal Berikutnya (${room.current_question + 2}/${TOTAL_QUESTIONS})`}
+            </button>
+          </motion.div>
         )}
       </div>
     </div>
@@ -357,7 +409,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
     }
   }, [roomId, loadQuestions, loadPlayers, questions.length])
 
-  // ── FIX #1: Admin force show_result saat timer habis ──
+  // ── Admin force show_result saat timer habis ──
   useEffect(() => {
     if (!isAdmin || !room || room.show_result || phase !== 'playing') return
     if (!room.countdown_started_at) return
@@ -450,12 +502,10 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
   }
 
   async function handleGoToFinal() {
-  await supabase.from('royale_rooms').update({
-    status: 'finished',
-  }).eq('id', roomId)
-  // phase akan otomatis berubah ke 'finished' via realtime listener
-  // lalu render FinalResult
-}
+    await supabase.from('royale_rooms').update({
+      status: 'finished',
+    }).eq('id', roomId)
+  }
 
   // ── RENDER ──
   if (phase === 'waiting') {
