@@ -45,7 +45,7 @@ interface RoomState {
 
 const TOTAL_QUESTIONS = 10
 const TIME_LIMIT = 20
-const AUTO_ADVANCE_SECONDS = 5   // ← hitung mundur sebelum lanjut otomatis
+const AUTO_ADVANCE_SECONDS = 5
 
 // ─────────────────────────────────────────────
 // Komponen tampilan admin sebagai observer
@@ -75,9 +75,7 @@ function AdminObserver({
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    // Hanya jalankan countdown saat show_result aktif
-    // dan bukan soal terakhir / semua gugur (kasus itu butuh konfirmasi manual)
-    if (!room.show_result || allEliminated || isLastQuestion) {
+    if (!room.show_result || allEliminated) {
       if (countdownRef.current) clearInterval(countdownRef.current)
       setCountdown(AUTO_ADVANCE_SECONDS)
       return
@@ -99,7 +97,6 @@ function AdminObserver({
     return () => {
       if (countdownRef.current) clearInterval(countdownRef.current)
     }
-  // onNextQuestion sengaja tidak dimasukkan agar tidak re-trigger
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room.show_result, room.current_question, allEliminated, isLastQuestion])
 
@@ -284,15 +281,14 @@ function AdminObserver({
           </div>
         </div>
 
-        {/* ── Tombol lanjut (admin) — hanya soal terakhir / semua gugur ── */}
+        {/* ── Tombol lanjut (admin) ── */}
         {room.show_result && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center gap-2"
           >
-            {/* Countdown kecil — hanya tampil kalau bukan akhir game */}
-            {!allEliminated && !isLastQuestion && countdown > 0 && (
+            {!allEliminated && countdown > 0 && (
               <p className="text-indigo-300/60 text-xs">
                 Lanjut otomatis dalam{' '}
                 <motion.span
@@ -306,16 +302,14 @@ function AdminObserver({
                 {' '}detik...
               </p>
             )}
-
-            {/* Tombol — selalu tampil, bisa diklik lebih awal */}
-            <button
-              onClick={allEliminated || isLastQuestion ? onGoToFinal : onNextQuestion}
-              className="w-full py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg transition-all hover:scale-[1.02] active:scale-95 shadow-lg"
-            >
-              {allEliminated || isLastQuestion
-                ? '🏆 Lihat Hasil Akhir'
-                : `➡️ Soal Berikutnya (${room.current_question + 2}/${TOTAL_QUESTIONS})`}
-            </button>
+            {allEliminated && (
+              <button
+                onClick={onGoToFinal}
+                className="w-full py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg transition-all hover:scale-[1.02] active:scale-95 shadow-lg"
+              >
+                🏆 Lihat Hasil Akhir
+              </button>
+            )}
           </motion.div>
         )}
       </div>
@@ -336,6 +330,15 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
 
   const showResultTriggered = useRef(false)
 
+  // ── Refs untuk menghindari stale closure di dalam realtime callbacks ──
+  const playersRef = useRef<Player[]>([])
+  const roomRef = useRef<RoomState | null>(null)
+  const questionsLoadedRef = useRef(false)
+
+  // Selalu sync ref dengan state terbaru
+  useEffect(() => { playersRef.current = players }, [players])
+  useEffect(() => { roomRef.current = room }, [room])
+
   const loadQuestions = useCallback(async (ids: number[]) => {
     const { data } = await supabase
       .from('questions')
@@ -344,6 +347,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
     if (!data) return
     const ordered = ids.map(id => data.find(q => q.id === id)!).filter(Boolean)
     setQuestions(ordered)
+    questionsLoadedRef.current = true
   }, [])
 
   const loadPlayers = useCallback(async () => {
@@ -351,15 +355,20 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
       .from('royale_players')
       .select('*')
       .eq('room_id', roomId)
-    if (data) setPlayers(data)
+    if (data) {
+      setPlayers(data)
+      playersRef.current = data
+    }
   }, [roomId])
 
   // ── Subscribe realtime room + players ──
   useEffect(() => {
+    // Load initial state
     supabase.from('royale_rooms').select('*').eq('id', roomId).single()
       .then(({ data }) => {
         if (!data) return
         setRoom(data)
+        roomRef.current = data
         if (data.status === 'playing') {
           setPhase('playing')
           if (data.question_ids) loadQuestions(JSON.parse(data.question_ids))
@@ -377,9 +386,13 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
       }, async (payload) => {
         const newRoom = payload.new as RoomState
         setRoom(newRoom)
+        roomRef.current = newRoom
 
         if (newRoom.status === 'playing' && newRoom.question_ids) {
-          if (questions.length === 0) await loadQuestions(JSON.parse(newRoom.question_ids))
+          // Gunakan ref bukan state untuk cek apakah soal sudah di-load
+          if (!questionsLoadedRef.current) {
+            await loadQuestions(JSON.parse(newRoom.question_ids))
+          }
           setPhase('playing')
         }
         if (newRoom.status === 'finished') setPhase('finished')
@@ -391,23 +404,48 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
       })
       .subscribe()
 
-    const playerCh = supabase
-      .channel(`royale-players-${roomId}`)
+    // Channel untuk INSERT pemain baru (realtime waiting room)
+    const playerInsertCh = supabase
+      .channel(`royale-players-insert-${roomId}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public',
+        table: 'royale_players', filter: `room_id=eq.${roomId}`
+      }, (payload) => {
+        const p = payload.new as Player
+        setPlayers(prev => {
+          if (prev.find(x => x.id === p.id)) return prev
+          const updated = [...prev, p]
+          playersRef.current = updated
+          return updated
+        })
+      })
+      .subscribe()
+
+    // Channel untuk UPDATE pemain (jawaban, skor, eliminasi)
+    const playerUpdateCh = supabase
+      .channel(`royale-players-update-${roomId}`)
       .on('postgres_changes', {
         event: 'UPDATE', schema: 'public',
         table: 'royale_players', filter: `room_id=eq.${roomId}`
       }, (payload) => {
-        setPlayers(prev => prev.map(p =>
-          p.id === payload.new.id ? { ...p, ...payload.new } : p
-        ))
+        setPlayers(prev => {
+          const updated = prev.map(p =>
+            p.id === payload.new.id ? { ...p, ...payload.new } : p
+          )
+          playersRef.current = updated
+          return updated
+        })
       })
       .subscribe()
 
     return () => {
       supabase.removeChannel(roomCh)
-      supabase.removeChannel(playerCh)
+      supabase.removeChannel(playerInsertCh)
+      supabase.removeChannel(playerUpdateCh)
+      questionsLoadedRef.current = false
     }
-  }, [roomId, loadQuestions, loadPlayers, questions.length])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId])
 
   // ── Admin force show_result saat timer habis ──
   useEffect(() => {
@@ -453,7 +491,10 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
     if (!room || selectedAnswer !== undefined) return
     const isTimeout = answer === '__timeout__'
 
-    const currentQ = questions[room.current_question]
+    const currentRoom = roomRef.current
+    if (!currentRoom) return
+
+    const currentQ = questions[currentRoom.current_question]
     if (!currentQ) return
 
     const isCorrect = !isTimeout &&
@@ -461,7 +502,8 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
 
     setSelectedAnswer(isTimeout ? '' : answer)
 
-    const myPlayer = players.find(p => p.id === playerId)
+    // Gunakan playersRef agar score selalu up-to-date
+    const myPlayer = playersRef.current.find(p => p.id === playerId)
     await supabase.from('royale_players').update({
       current_answer: isTimeout ? '__timeout__' : answer,
       answered_at: Date.now(),
@@ -477,9 +519,14 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
   }
 
   async function handleNextQuestion() {
-    if (!room || !isAdmin) return
-    const nextQ = room.current_question + 1
-    const activePlayers = players.filter(p => !p.is_eliminated)
+    if (!isAdmin) return
+
+    // Gunakan roomRef & playersRef agar tidak stale saat dipanggil dari countdown
+    const currentRoom = roomRef.current
+    if (!currentRoom) return
+
+    const nextQ = currentRoom.current_question + 1
+    const activePlayers = playersRef.current.filter(p => !p.is_eliminated)
     const allEliminated = activePlayers.length === 0
     const isLast = nextQ >= TOTAL_QUESTIONS || allEliminated
 
@@ -488,7 +535,7 @@ export default function RoyaleGame({ roomId, playerId, isAdmin }: RoyaleGameProp
       .eq('room_id', roomId)
 
     await supabase.from('royale_rooms').update({
-      current_question: isLast ? room.current_question : nextQ,
+      current_question: isLast ? currentRoom.current_question : nextQ,
       show_result: false,
       round_winner_ids: null,
       status: isLast ? 'finished' : 'playing',

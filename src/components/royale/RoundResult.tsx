@@ -31,7 +31,6 @@ export default function RoundResult({
   correctAnswer,
   allPlayers,
   questionNumber,
-  totalQuestions,
   isLastQuestion,
   onContinue,
   isAdmin,
@@ -47,7 +46,7 @@ export default function RoundResult({
   const [countdown, setCountdown] = useState(5)
 
   useEffect(() => {
-    if (!isAdmin) return
+    if (!isAdmin || allEliminated) return
     setCountdown(5)
 
     const interval = setInterval(() => {
@@ -64,7 +63,7 @@ export default function RoundResult({
     return () => clearInterval(interval)
   // onContinue sengaja tidak di-include agar tidak re-trigger
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, questionNumber])
+  }, [isAdmin, questionNumber, allEliminated])
 
   return (
     <motion.div
@@ -204,15 +203,15 @@ export default function RoundResult({
             </p>
           )}
 
-          {/* Tombol fallback — bisa diklik lebih awal */}
-          <button
-            onClick={onContinue}
-            className="px-10 py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg transition-all hover:scale-105 active:scale-95 shadow-lg"
-          >
-            {allEliminated || isLastQuestion
-              ? '🏆 Lihat Hasil Akhir'
-              : `➡️ Soal Berikutnya (${questionNumber}/${totalQuestions})`}
-          </button>
+          {/* Hanya tampilkan tombol final saat semua pemain gugur */}
+          {allEliminated && (
+            <button
+              onClick={onContinue}
+              className="px-10 py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg transition-all hover:scale-105 active:scale-95 shadow-lg"
+            >
+              🏆 Lihat Hasil Akhir
+            </button>
+          )}
         </motion.div>
       )}
 
