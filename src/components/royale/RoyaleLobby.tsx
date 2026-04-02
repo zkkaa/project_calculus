@@ -211,7 +211,7 @@ export default function RoyaleLobby({ onRoomReady }: RoyaleLobbyProps) {
             </button>
 
             <button onClick={() => setStep('identity')} className="text-xs text-gray-400 hover:text-gray-600 underline text-center">
-              ← Ganti nama/karakter
+              ← Kembali
             </button>
 
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
@@ -246,7 +246,7 @@ export default function RoyaleLobby({ onRoomReady }: RoyaleLobbyProps) {
               disabled={loading || !joinCode.trim()}
               className="w-full py-4 rounded-xl bg-indigo-600 text-white font-bold text-base hover:bg-indigo-700 transition disabled:opacity-40"
             >
-              {loading ? 'Bergabung...' : 'Bergabung →'}
+              {loading ? 'Bergabung...' : 'Bergabung '}
             </button>
 
             <button onClick={() => setStep('choose')} className="text-xs text-gray-400 hover:text-gray-600 underline text-center">

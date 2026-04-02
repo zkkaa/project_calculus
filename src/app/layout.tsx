@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "duel kalkulus",
-  description: "Game duel kalkulus sederhana untuk latihan asah otak",
+  title: "SIGMA",
+  description: "Smart Interactive Graphing & Math Application.",
 };
 
 export default function RootLayout({

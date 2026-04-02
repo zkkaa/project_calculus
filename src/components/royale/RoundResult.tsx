@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import { useEffect, useState } from 'react'
 
 interface Player {
   id: string
@@ -40,8 +41,30 @@ export default function RoundResult({
 }: RoundResultProps) {
   const myPlayer = allPlayers.find(p => p.id === myPlayerId)
   const isCorrect = myPlayer?.is_correct ?? false
-  const isEliminated = myPlayer?.is_eliminated ?? false
   const isTimeout = mySelectedAnswer === '' || mySelectedAnswer === '__timeout__'
+
+  // ── Auto-countdown: hanya admin yang trigger onContinue ──
+  const [countdown, setCountdown] = useState(5)
+
+  useEffect(() => {
+    if (!isAdmin) return
+    setCountdown(5)
+
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          onContinue()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  // onContinue sengaja tidak di-include agar tidak re-trigger
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, questionNumber])
 
   return (
     <motion.div
@@ -58,14 +81,12 @@ export default function RoundResult({
         className="text-center"
       >
         {allEliminated ? (
-          // Kasus semua tereleminasi
           <div className="flex flex-col items-center gap-3">
             <div className="text-6xl">💥</div>
             <h2 className="text-3xl font-black text-white">Semua Pemain Gugur!</h2>
             <p className="text-red-300 text-sm">Game berakhir.</p>
           </div>
         ) : isCorrect ? (
-          // Jawaban benar
           <div className="flex flex-col items-center gap-3">
             <motion.div
               animate={{ rotate: [0, -15, 15, -10, 10, 0], scale: [1, 1.2, 1] }}
@@ -80,7 +101,6 @@ export default function RoundResult({
             </div>
           </div>
         ) : (
-          // Jawaban salah / timeout
           <div className="flex flex-col items-center gap-3">
             <motion.div
               animate={{ x: [-8, 8, -8, 8, 0] }}
@@ -94,7 +114,6 @@ export default function RoundResult({
             </h2>
             <p className="text-white/50 text-sm mt-1">Kamu tereliminasi dari babak ini</p>
 
-            {/* Jawaban yang benar */}
             <div className="flex flex-col items-center gap-1 mt-2">
               <p className="text-white/40 text-xs uppercase tracking-widest font-semibold">
                 Jawaban yang benar adalah
@@ -134,12 +153,9 @@ export default function RoundResult({
                     : ''
                 } ${p.is_eliminated ? 'opacity-40' : ''}`}
               >
-                {/* Rank */}
                 <span className="text-white/40 text-sm w-6 text-center font-bold">
                   {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
                 </span>
-
-                {/* Avatar */}
                 <Image
                   src={`/gift/${p.avatar}`}
                   width={32}
@@ -147,8 +163,6 @@ export default function RoundResult({
                   className={`w-8 h-8 object-contain ${p.is_eliminated ? 'grayscale' : ''}`}
                   alt={p.name}
                 />
-
-                {/* Nama */}
                 <span className={`text-sm font-semibold flex-1 truncate ${
                   p.id === myPlayerId ? 'text-yellow-300' : 'text-white'
                 }`}>
@@ -157,32 +171,49 @@ export default function RoundResult({
                     <span className="text-yellow-400/50 font-normal"> (kamu)</span>
                   )}
                 </span>
-
-                {/* Status eliminated */}
                 {p.is_eliminated && (
                   <span className="text-red-400/70 text-xs mr-1">💀</span>
                 )}
-
-                {/* Skor */}
                 <span className="text-indigo-300 text-sm font-bold">{p.score} poin</span>
               </motion.div>
             ))}
         </div>
       </motion.div>
 
-      {/* ── Tombol lanjut (admin only) ── */}
+      {/* ── Countdown + tombol fallback (admin only) ── */}
       {isAdmin && (
-        <motion.button
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          onClick={onContinue}
-          className="px-10 py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg transition-all hover:scale-105 active:scale-95 shadow-lg"
+          className="flex flex-col items-center gap-2"
         >
-          {allEliminated || isLastQuestion
-            ? '🏆 Lihat Hasil Akhir'
-            : `➡️ Soal Berikutnya (${questionNumber}/${totalQuestions})`}
-        </motion.button>
+          {/* Hitung mundur kecil */}
+          {countdown > 0 && !allEliminated && !isLastQuestion && (
+            <p className="text-indigo-300/60 text-xs">
+              Lanjut otomatis dalam{' '}
+              <motion.span
+                key={countdown}
+                initial={{ scale: 1.4, opacity: 0.6 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="font-bold text-indigo-200"
+              >
+                {countdown}
+              </motion.span>
+              {' '}detik...
+            </p>
+          )}
+
+          {/* Tombol fallback — bisa diklik lebih awal */}
+          <button
+            onClick={onContinue}
+            className="px-10 py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg transition-all hover:scale-105 active:scale-95 shadow-lg"
+          >
+            {allEliminated || isLastQuestion
+              ? '🏆 Lihat Hasil Akhir'
+              : `➡️ Soal Berikutnya (${questionNumber}/${totalQuestions})`}
+          </button>
+        </motion.div>
       )}
 
       {!isAdmin && (
@@ -193,7 +224,7 @@ export default function RoundResult({
           className="text-indigo-300 text-sm"
         >
           <span className="inline-block w-2 h-2 rounded-full bg-indigo-400 animate-pulse mr-2" />
-          Menunggu host melanjutkan...
+          Menunggu soal berikutnya...
         </motion.p>
       )}
     </motion.div>
