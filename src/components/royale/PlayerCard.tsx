@@ -50,6 +50,7 @@ export default function PlayerCard({ name, avatar, score, isEliminated, isMe, ra
         width={56}
         height={56}
         className="w-14 h-14 object-contain rounded-xl"
+        unoptimized
       />
 
       {/* Nama */}

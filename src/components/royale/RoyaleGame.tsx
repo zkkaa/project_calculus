@@ -232,6 +232,7 @@ function AdminObserver({
                     width={28} height={28}
                     className="w-7 h-7 object-contain"
                     alt={p.name}
+                    unoptimized
                   />
                   <span className="text-white text-xs font-semibold truncate flex-1">{p.name}</span>
                   {!room.show_result && p.current_answer !== null && (
@@ -270,6 +271,7 @@ function AdminObserver({
                     width={32} height={32}
                     className={`w-8 h-8 object-contain ${p.is_eliminated ? 'grayscale' : ''}`}
                     alt={p.name}
+                    unoptimized
                   />
                   <span className="text-white text-sm font-semibold flex-1 truncate">{p.name}</span>
                   {p.is_eliminated && (

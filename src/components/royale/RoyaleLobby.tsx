@@ -21,6 +21,8 @@ const AVATARS = [
   'cat3.webp',
   'cat4.webp',
   'cat5.webp',
+  'plenger1.webp',
+  'plenger2.webp',
 ]
 
 const calcDecorations = [
@@ -158,12 +160,12 @@ export default function RoyaleLobby({ onRoomReady }: RoyaleLobbyProps) {
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2 block">Pilih karakter</label>
               <div className="grid grid-cols-3 gap-3 justify-center max-w-xs mx-auto">
-                {AVATARS.map(av => (
-                  <button key={av}
+                {AVATARS.map((av, i) => (
+                  <button key={`${av}-${i}`}
                     onClick={() => setAvatar(av)}
                     className={`rounded-2xl border-2 p-1 transition-all ${avatar === av ? 'border-indigo-500 scale-110 shadow-lg' : 'border-gray-200 opacity-60 hover:opacity-100'}`}
                   >
-                    <Image src={`/gift/${av}`} alt={av} className="w-16 h-16 object-contain rounded-xl" width={64} height={64} />
+                    <Image src={`/gift/${av}`} alt={av} className="w-16 h-16 object-contain rounded-xl" width={64} height={64} unoptimized/>
                   </button>
                 ))}
               </div>
@@ -190,7 +192,7 @@ export default function RoyaleLobby({ onRoomReady }: RoyaleLobbyProps) {
           >
             <div className="text-center">
               <div className="flex items-center justify-center gap-3 mb-1">
-                <Image src={`/gift/${avatar}`} alt={avatar} className="w-10 h-10 rounded-full object-contain" width={40} height={40} />
+                <Image src={`/gift/${avatar}`} alt={avatar} className="w-10 h-10 rounded-full object-contain" width={40} height={40} unoptimized/>
                 <span className="font-bold text-gray-800 text-lg">{name}</span>
               </div>
               <p className="text-gray-400 text-sm">Mau buat room atau masuk room?</p>

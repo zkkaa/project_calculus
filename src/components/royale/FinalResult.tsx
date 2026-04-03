@@ -76,7 +76,7 @@ export default function FinalResult({ players, myPlayerId, onFinish }: FinalResu
         >
           {podium.map((p, i) => p && (
             <div key={p.id} className="flex flex-col items-center gap-2">
-              <Image src={`/gift/${p.avatar}`} width={56} height={56} className="w-14 h-14 object-contain" alt={p.name} />
+              <Image src={`/gift/${p.avatar}`} width={56} height={56} className="w-14 h-14 object-contain" alt={p.name} unoptimized/>
               <p className="text-white text-xs font-bold text-center w-20 truncate">{p.name}</p>
               <p className="text-indigo-300 text-xs">{p.score} poin</p>
               <div className={`${podiumHeights[i]} w-20 ${podiumColors[i]} rounded-t-xl flex items-start justify-center pt-2`}>
@@ -115,6 +115,7 @@ export default function FinalResult({ players, myPlayerId, onFinish }: FinalResu
                 height={32}
                 className={`w-8 h-8 object-contain ${p.is_eliminated ? 'grayscale opacity-50' : ''}`}
                 alt={p.name}
+                unoptimized
               />
               <span className={`text-sm font-semibold flex-1 truncate ${p.id === myPlayerId ? 'text-yellow-300' : 'text-white'}`}>
                 {p.name} {p.id === myPlayerId && '(kamu)'}

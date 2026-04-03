@@ -293,6 +293,7 @@ export default function WaitingRoom({ roomId, playerId, isAdmin, onGameStart }: 
                                         className="w-14 h-14 object-contain rounded-xl"
                                         width={56}
                                         height={56}
+                                        unoptimized
                                     />
                                     <p className={`text-sm font-bold text-center truncate w-full ${player.id === playerId ? 'text-yellow-300' : 'text-white'
                                         }`}>

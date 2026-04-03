@@ -182,6 +182,7 @@ export default function RoundResult({
                   height={32}
                   className={`w-8 h-8 object-contain ${p.is_eliminated ? 'grayscale' : ''}`}
                   alt={p.name}
+                  unoptimized
                 />
                 <span className={`text-sm font-semibold flex-1 truncate ${
                   p.id === myPlayerId ? 'text-yellow-300' : 'text-white'
