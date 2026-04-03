@@ -147,7 +147,6 @@ export const MEMBERS = [
 
 // ── FOOTER ────────────────────────────────────────────────────────────
 export const FOOTER = {
-  desc: 'Platform belajar kalkulus interaktif yang dibuat dengan ❤️ oleh Kelompok 9.',
-  course: 'Proyek Mata Kuliah Kalkulus',
+  desc: 'platform pembelajaran kalkulus interaktif berbasis teknologi yang tidak membuatmu bosan belajar.',
   year: new Date().getFullYear(),
 }

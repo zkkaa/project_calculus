@@ -6,14 +6,6 @@ import Link from 'next/link'
 import { gsap } from 'gsap'
 import { NAV_LINKS, HAMBURGER_MENU } from '@/data/landing'
 
-// ─────────────────────────────────────────────
-//  Navbar — Landing Page
-//  Floating rounded navbar dengan:
-//  - Anchor links ke section landing page
-//  - Hamburger GSAP: slide + stagger items
-//  - Active state otomatis berdasarkan scroll
-// ─────────────────────────────────────────────
-
 // Icon SVG inline ─────────────────────────────
 function IconHome() {
   return (

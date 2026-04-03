@@ -85,7 +85,6 @@ export function Footer() {
               sigma
             </p>
             <p className="text-sm text-gray-500 leading-relaxed">{FOOTER.desc}</p>
-            <p className="text-xs text-gray-400 mt-2">{FOOTER.course}</p>
           </div>
 
           {/* Nav links */}
@@ -111,17 +110,14 @@ export function Footer() {
             <ul className="flex flex-col gap-2 text-sm text-gray-500">
               <li>Kelompok 9</li>
               <li>Mata Kuliah Kalkulus</li>
-              <li>Universitas</li>
+              <li>Universitas Siliwangi</li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-gray-100 pt-6 flex flex-col md:flex-row items-center justify-between gap-2">
+        <div className="border-t border-gray-100 pt-6 flex items-center justify-center">
           <p className="text-xs text-gray-400">
-            © {FOOTER.year} {SITE_NAME}. Dibuat untuk proyek kuliah.
-          </p>
-          <p className="text-xs text-gray-400">
-            Dibangun dengan Next.js · Tailwind · Framer Motion · Supabase
+            © {FOOTER.year} {SITE_NAME}. all rights reserved.
           </p>
         </div>
       </div>
