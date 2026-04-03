@@ -16,6 +16,11 @@ function generateId(length = 6) {
 const AVATARS = [
   'red-duel.webp',
   'blue-duel.webp',
+  'cat1.webp',
+  'cat2.webp',
+  'cat3.webp',
+  'cat4.webp',
+  'cat5.webp',
 ]
 
 const calcDecorations = [
@@ -131,9 +136,9 @@ export default function RoyaleLobby({ onRoomReady }: RoyaleLobbyProps) {
             className="bg-white border border-gray-200 rounded-2xl shadow-xl p-10 w-full max-w-md flex flex-col gap-6"
           >
             <div className="text-center">
-              <div className="text-4xl mb-2">👑</div>
+              {/* <div className="text-4xl mb-2">👑</div> */}
               <h1 className="text-3xl font-black text-gray-900">Calculus Royale</h1>
-              <p className="text-gray-400 text-sm mt-1">Battle kalkulus seru bareng teman-teman!</p>
+              <p className="text-gray-400 text-sm mt-1">ajak temanmu, dan bantai mereka!!</p>
             </div>
 
             {/* Input nama */}
@@ -152,13 +157,13 @@ export default function RoyaleLobby({ onRoomReady }: RoyaleLobbyProps) {
             {/* Pilih avatar */}
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2 block">Pilih karakter</label>
-              <div className="flex gap-4 justify-center">
+              <div className="grid grid-cols-3 gap-3 justify-center max-w-xs mx-auto">
                 {AVATARS.map(av => (
                   <button key={av}
                     onClick={() => setAvatar(av)}
                     className={`rounded-2xl border-2 p-1 transition-all ${avatar === av ? 'border-indigo-500 scale-110 shadow-lg' : 'border-gray-200 opacity-60 hover:opacity-100'}`}
                   >
-                    <Image src={`/gift/${av}`} alt={av} className="w-20 h-20 object-contain rounded-xl" width={80} height={80} />
+                    <Image src={`/gift/${av}`} alt={av} className="w-16 h-16 object-contain rounded-xl" width={64} height={64} />
                   </button>
                 ))}
               </div>
