@@ -45,7 +45,7 @@ export default function GameHero({ onShowAll }: GameHeroProps) {
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full md:w-1/2 flex-shrink-0"
+            className="w-full md:w-1/2 shrink-0"
           >
             <div className="relative rounded-3xl overflow-hidden"
               style={{

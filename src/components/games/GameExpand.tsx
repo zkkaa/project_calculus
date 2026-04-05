@@ -97,7 +97,7 @@ export default function GameExpand({ visible }: GameExpandProps) {
                 background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
               }}
             >
-              <div className="text-4xl flex-shrink-0">🧠</div>
+              <div className="text-4xl shrink-0">🧠</div>
               <div>
                 <p className="text-white font-bold text-base md:text-lg">
                   &quot;Kalkulus lebih mudah dipahami ketika kamu terlibat aktif di dalamnya.&quot;
