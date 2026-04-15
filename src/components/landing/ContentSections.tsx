@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { HOW_IT_WORKS, QUOTE, TOPICS } from '@/data/landing'
+import { TOPICS } from '@/data/landing'
 
 // ─────────────────────────────────────────────
 //  HowItWorksSection
@@ -71,44 +71,6 @@ export function HowItWorksSection() {
   )
 }
 
-// ─────────────────────────────────────────────
-//  QuoteSection
-// ─────────────────────────────────────────────
-export function QuoteSection() {
-  return (
-    <section className="py-24 px-6 overflow-hidden">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.97 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.7 }}
-        className="max-w-3xl mx-auto text-center relative"
-      >
-        {/* Big quote mark */}
-        <span
-          className="absolute -top-6 left-0 select-none pointer-events-none leading-none"
-          style={{
-            fontSize: '10rem',
-            fontFamily: '"Georgia", serif',
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            opacity: 0.12,
-          }}
-        >
-          &quot;
-        </span>
-
-        <blockquote
-          className="text-2xl md:text-3xl font-light leading-relaxed text-gray-700 relative z-10"
-          style={{ fontFamily: '"Georgia", serif', fontStyle: 'italic' }}
-        >
-          {QUOTE.text}
-        </blockquote>
-      </motion.div>
-    </section>
-  )
-}
 
 // ─────────────────────────────────────────────
 //  TopicsSection — preview materi

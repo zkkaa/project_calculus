@@ -1,18 +1,13 @@
-// src/app/page.tsx
-// ─────────────────────────────────────────────
-//  Landing Page — SIGMA
-//  Merakit semua komponen section
-// ─────────────────────────────────────────────
-
 import MathParticles from '@/components/ui/MathParticles'
 import Navbar from '@/components/landing/Navbar'
 import HeroSection from '@/components/landing/HeroSection'
 import {
   HowItWorksSection,
-  QuoteSection,
   TopicsSection,
 } from '@/components/landing/ContentSections'
 import { Footer } from '@/components/landing/CTAFooter'
+// import Quote from '@/components/landing/Quote'
+// import Teamm from '@/components/landing/Teamm'
 
 export default function Home() {
   return (
@@ -31,8 +26,9 @@ export default function Home() {
       <div className="relative z-10">
         <Navbar />
         <HeroSection />
+        {/* <Teamm /> */}
         <HowItWorksSection />
-        <QuoteSection />
+        {/* <Quote /> */}
         <TopicsSection />
         <Footer />
       </div>

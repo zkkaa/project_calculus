@@ -149,3 +149,90 @@ export const FOOTER = {
   desc: 'platform pembelajaran kalkulus interaktif berbasis teknologi yang tidak membuatmu bosan belajar.',
   year: new Date().getFullYear(),
 }
+
+export interface Project {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  year: string;
+  category: string;
+  link: string;
+}
+
+export const projectsData: Project[] = [
+  {
+    id: 1,
+    title: "Executive Spaces",
+    description: "A modern workspace booking platform with real-time availability and seamless payment integration. Built with focus on user experience and performance.",
+    image: "/gift/plenger2.webp",
+    year: "2024",
+    category: "Web App",
+    link: "/projects/executive-spaces",
+  },
+  {
+    id: 2,
+    title: "E-Commerce Platform",
+    description: "Full-featured online store with advanced filtering, cart management, and secure checkout. Optimized for mobile shopping experience.",
+    image: "/gift/plenger2.webp",
+    year: "2024",
+    category: "E-Commerce",
+    link: "/projects/ecommerce",
+  },
+  {
+    id: 3,
+    title: "Analytics Dashboard",
+    description: "Real-time data visualization dashboard with interactive charts and customizable widgets. Designed for business intelligence.",
+    image: "/gift/plenger2.webp",
+    year: "2023",
+    category: "Dashboard",
+    link: "/projects/analytics",
+  },
+  {
+    id: 4,
+    title: "Social Media App",
+    description: "Connect with friends and share moments. Features include real-time messaging, stories, and content recommendations.",
+    image: "/gift/plenger2.webp",
+    year: "2023",
+    category: "Social",
+    link: "/projects/social-app",
+  },
+  {
+    id: 5,
+    title: "Portfolio CMS",
+    description: "Content management system for creative professionals. Drag-and-drop interface with powerful customization options.",
+    image: "/gift/plenger2.webp",
+    year: "2023",
+    category: "CMS",
+    link: "/projects/portfolio-cms",
+  },
+  {
+    id: 6,
+    title: "Fitness Tracker",
+    description: "Track your workouts, nutrition, and progress. AI-powered recommendations and social features to keep you motivated.",
+    image: "/gift/plenger2.webp",
+    year: "2022",
+    category: "Mobile App",
+    link: "/projects/fitness-tracker",
+  },
+];
+
+export const getProjectsByYear = (year: string) => 
+  projectsData.filter(p => p.year === year);
+
+export const getProjectsByCategory = (category: string) => 
+  projectsData.filter(p => p.category === category);
+
+export const getProjectById = (id: number) => 
+  projectsData.find(p => p.id === id);
+
+export const getAllCategories = () => {
+  const categories = projectsData.map(p => p.category);
+  return Array.from(new Set(categories));
+};
+
+export const getAllYears = () => {
+  const years = projectsData.map(p => p.year);
+  const uniqueYears = Array.from(new Set(years));
+  return uniqueYears.sort((a, b) => parseInt(b) - parseInt(a));
+};
