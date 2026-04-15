@@ -12,7 +12,7 @@ import {
   QuoteSection,
   TopicsSection,
 } from '@/components/landing/ContentSections'
-import { CTASection, Footer } from '@/components/landing/CTAFooter'
+import { Footer } from '@/components/landing/CTAFooter'
 
 export default function Home() {
   return (
@@ -34,7 +34,6 @@ export default function Home() {
         <HowItWorksSection />
         <QuoteSection />
         <TopicsSection />
-        <CTASection />
         <Footer />
       </div>
     </main>
