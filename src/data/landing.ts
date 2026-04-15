@@ -6,7 +6,7 @@
 export const SITE_NAME = 'Sigma'
 export const SITE_TAGLINE = 'Platform Kalkulus Interaktif'
 export const SITE_DESC =
-  'Sigma menghadirkan materi yang jelas, latihan interaktif, dan game duel seru untuk membuat kalkulus terasa mudah dan menyenangkan.'
+  'platform pembelajaran kalkulus berbasis teknologi yang membantu pengguna memahami konsep secara lebih mudah dan interaktif.'
 
 // ── NAVBAR LINKS (anchor ke section di landing page) ─────────────────
 export const NAV_LINKS = [
@@ -69,8 +69,7 @@ export const TOPICS = [
 
 // ── QUOTE ─────────────────────────────────────────────────────────────
 export const QUOTE = {
-  text: 'Kalkulus adalah bahasa yang digunakan Tuhan untuk menulis alam semesta.',
-  author: 'Galileo Galilei',
+  text: 'Kalkulus mengajarkan bahwa setiap perubahan memiliki makna dan pola. Tidak semua hal bisa dipahami secara instan, karena proses adalah bagian penting dari hasil. Seperti dalam hidup, memahami langkah demi langkah akan membawa kita pada jawaban yang lebih jelas.',
 }
 
 // ── HOW IT WORKS ──────────────────────────────────────────────────────

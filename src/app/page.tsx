@@ -7,7 +7,6 @@
 import MathParticles from '@/components/ui/MathParticles'
 import Navbar from '@/components/landing/Navbar'
 import HeroSection from '@/components/landing/HeroSection'
-import FeaturesSection from '@/components/landing/FeaturesSection'
 import {
   HowItWorksSection,
   QuoteSection,
@@ -32,7 +31,6 @@ export default function Home() {
       <div className="relative z-10">
         <Navbar />
         <HeroSection />
-        <FeaturesSection />
         <HowItWorksSection />
         <QuoteSection />
         <TopicsSection />

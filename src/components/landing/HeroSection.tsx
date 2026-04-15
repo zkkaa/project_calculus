@@ -74,32 +74,20 @@ export default function HeroSection() {
         className="relative z-10 flex flex-col items-center gap-5 max-w-3xl"
       >
         {/* Badge */}
-        <motion.div variants={stagger.item}>
-          <span className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-600 text-xs font-semibold px-4 py-1.5 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-            Platform Kalkulus Interaktif · Kelompok 9
-          </span>
-        </motion.div>
+        <div className='flex items-center gap-2 ' >
+          <div className='w-5 h-5 bg-blue-300 rounded-md'></div>
+          <span className="text-xl">𝖘𝖎𝖌𝖒𝖆</span>
+        </div>
 
         {/* Headline */}
         <motion.h1
           variants={stagger.item}
-          className="text-5xl md:text-7xl font-black tracking-tighter leading-[1.05] text-gray-900"
+          className="text-2xl md:text-5xl font-black tracking-tighter leading-[1.05] text-gray-900"
           style={{ fontFamily: '"Georgia", serif' }}
         >
-          Belajar{' '}
-          <span
-            className="relative inline-block"
-            style={{
-              background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #06b6d4 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Kalkulus
-          </span>
+          Smart Interactive Graphing 
           <br />
-          Lebih Seru
+          <span className='text-gray-500'>& Math Application</span>
         </motion.h1>
 
         {/* Sub */}
@@ -118,35 +106,11 @@ export default function HeroSection() {
           >
             Jelajahi Materi →
           </Link>
-          <Link
-            href="/games/duel"
-            className="border border-gray-200 text-gray-700 font-semibold px-7 py-3.5 rounded-full text-sm hover:border-gray-400 hover:bg-gray-50 transition-all hover:scale-105 active:scale-95"
-          >
-            ⚔️ Duel Sekarang
-          </Link>
+          
         </motion.div>
 
         {/* Stats */}
-        <motion.div
-          variants={stagger.item}
-          className="flex gap-10 mt-6"
-        >
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center">
-              <div
-                className="text-3xl font-black text-gray-900"
-                style={{
-                  background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                <Counter to={s.value} suffix={s.suffix} />
-              </div>
-              <div className="text-xs text-gray-400 mt-0.5 font-medium">{s.label}</div>
-            </div>
-          ))}
-        </motion.div>
+        
       </motion.div>
 
       {/* Scroll hint */}

@@ -11,42 +11,60 @@ export function HowItWorksSection() {
   return (
     <section className="py-24 px-6 bg-gray-50/60">
       <div className="max-w-5xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <span className="text-blue-500 text-xs font-bold uppercase tracking-[0.2em]">Cara Kerja</span>
-          <h2 className="text-4xl font-black tracking-tight text-gray-900 mt-2">
-            Mulai belajar dalam 3 langkah
-          </h2>
-        </motion.div>
-
-        <div className="grid md:grid-cols-3 gap-8 relative">
-          {/* Connector */}
-          <div className="hidden md:block absolute top-9 left-[calc(33.3%+20px)] right-[calc(33.3%+20px)] h-px"
-            style={{ background: 'linear-gradient(to right, #3b82f6, #8b5cf6)' }} />
-
-          {HOW_IT_WORKS.map((step, i) => (
-            <motion.div
-              key={step.num}
-              initial={{ opacity: 0, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.18, duration: 0.5 }}
-              className="flex flex-col items-center text-center"
-            >
-              <div
-                className="w-18 h-18 rounded-2xl flex items-center justify-center mb-5 font-black text-white text-xl shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
-              >
-                {step.num}
-              </div>
-              <h3 className="text-lg font-black text-gray-900 mb-2">{step.title}</h3>
-              <p className="text-gray-500 text-sm leading-relaxed">{step.desc}</p>
-            </motion.div>
-          ))}
+        <div>
+          <div className='flex items-center gap-2 '>
+            <span className='text-lg'>Semua yang kamu butuhkan</span>
+            <div className='bg-gray-300 w-28 h-1.5 mt-1'></div>
+          </div>
+          <div>
+            <span className='text-4xl font-extrabold italic'>dalam satu tempat</span>
+          </div>
+        </div>
+        <div className=' w-full h-80 mt-7 flex'>
+          <div className=' w-6/12 h-full flex items-center justify-center'>
+            <div className=' w-60 h-60 rounded-2xl bg-gray-400'></div>
+          </div>
+          <div className=' w-6/12 h-full flex flex-col gap-6 justify-center'>
+            <span className='text-4xl font-semibold'>Game</span>
+            <span className='mr-4'>SIGMA (Smart Interactive Graphing & Math Application) adalah platform pembelajaran matematika berbasis teknologi yang membantu pengguna memahami konsep secara lebih mudah dan interaktif.</span>
+            <button className=' w-48 text-start cursor-pointer leading-8'>lihat semuanya -{'>'}</button>
+          </div>
+        </div>
+        <div className='flex flex-col items-end mt-14'>
+          <div className='flex items-center gap-5 '>
+            <div className='bg-gray-300 w-28 h-1.5 mt-1'></div>
+            <span className='text-lg'>materi apa saja yang</span>
+          </div>
+          <div>
+            <span className='text-4xl font-extrabold italic'>bisa dipelajari?</span>
+          </div>
+          </div>
+        <div className=' w-full h-80 mt-7 flex'>
+          <div className=' w-full h-full flex items-center justify-center gap-5'>
+            <div className=' w-full h-44 rounded-2xl flex flex-col p-5 gap-2 justify-center bg-gray-400'>
+              <span className='text-2xl font-semibold'>f'(x) </span>
+              <span className='text-xs  font-semibold'>Turunan</span>
+              <span className=''>Laju perubahan fungsi terhadap variabelnya.</span>
+            </div>
+            <div className=' w-full h-44 rounded-2xl flex flex-col p-5 gap-2 justify-center bg-gray-400'>
+              <span className='text-2xl font-semibold'>f'(x) </span>
+              <span className='text-xs  font-semibold'>Turunan</span>
+              <span className=''>Laju perubahan fungsi terhadap variabelnya.</span>
+            </div>
+            <div className=' w-full h-44 rounded-2xl flex flex-col p-5 gap-2 justify-center bg-gray-400'>
+              <span className='text-2xl font-semibold'>f'(x) </span>
+              <span className='text-xs  font-semibold'>Turunan</span>
+              <span className=''>Laju perubahan fungsi terhadap variabelnya.</span>
+            </div>
+          </div>
+        </div>
+        <div className='w-full flex justify-center'>
+          <Link
+            href="/materi"
+            className="bg-gray-900 text-white font-bold px-7 py-3.5 rounded-full text-sm hover:bg-gray-700 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-gray-900/20"
+          >
+            Jelajahi Materi →
+          </Link>
         </div>
       </div>
     </section>
@@ -87,9 +105,6 @@ export function QuoteSection() {
         >
           {QUOTE.text}
         </blockquote>
-        <p className="mt-5 text-sm font-bold text-gray-400 tracking-widest uppercase">
-          — {QUOTE.author}
-        </p>
       </motion.div>
     </section>
   )
